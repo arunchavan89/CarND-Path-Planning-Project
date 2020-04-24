@@ -1,13 +1,14 @@
 #include <uWS/uWS.h>
 #include <fstream>
 #include <iostream>
-#include <string>
-#include <vector>
 #include "Eigen-3.3/Eigen/Core"
 #include "Eigen-3.3/Eigen/QR"
 #include "helpers.h"
 #include "json.hpp"
 #include "spline.h"
+#include "map.h"
+#include "path_planner.h"
+
 // for convenience
 using nlohmann::json;
 using std::string;
@@ -16,39 +17,17 @@ using std::vector;
 int main() {
     uWS::Hub h;
 
-    // Load up map values for waypoint's x,y,s and d normalized normal vectors
-    vector<double> map_waypoints_x;
-    vector<double> map_waypoints_y;
-    vector<double> map_waypoints_s;
-    vector<double> map_waypoints_dx;
-    vector<double> map_waypoints_dy;
+    Map map;
 
     // Waypoint map to read from
     string map_file_ = "../data/highway_map.csv";
-    // The max s value before wrapping around the track back to 0
-    double max_s = 6945.554;
+    map.read_map(map_file_);
 
-    std::ifstream in_map_(map_file_.c_str(), std::ifstream::in);
-
-    string line;
-    while (getline(in_map_, line)) {
-        std::istringstream iss(line);
-        double x;
-        double y;
-        float s;
-        float d_x;
-        float d_y;
-        iss >> x;
-        iss >> y;
-        iss >> s;
-        iss >> d_x;
-        iss >> d_y;
-        map_waypoints_x.push_back(x);
-        map_waypoints_y.push_back(y);
-        map_waypoints_s.push_back(s);
-        map_waypoints_dx.push_back(d_x);
-        map_waypoints_dy.push_back(d_y);
-    }
+    std::vector<double> map_waypoints_x = map.map_waypoints_x;
+    std::vector<double> map_waypoints_y = map.map_waypoints_y;
+    std::vector<double> map_waypoints_s = map.map_waypoints_s;
+    std::vector<double> map_waypoints_dx = map.map_waypoints_dx;
+    std::vector<double> map_waypoints_dy = map.map_waypoints_dy;
 
     h.onMessage([&map_waypoints_x, &map_waypoints_y, &map_waypoints_s,
         &map_waypoints_dx, &map_waypoints_dy]
@@ -59,9 +38,8 @@ int main() {
                 // The 2 signifies a websocket event
                 if (length && length > 2 && data[0] == '4' && data[1] == '2') {
 
-                    int lane = 1;
+                    PathPlanner path;
 
-                    double ref_vel = 49.5; //MPH
 
                     auto s = hasData(data);
 
@@ -97,120 +75,9 @@ int main() {
                             vector<double> next_x_vals;
                             vector<double> next_y_vals;
 
-                            /**
-                             * TODO: define a path made up of (x,y) points that the car will visit
-                             *   sequentially every .02 seconds
-                             */
-                             /*
-                             double path_x = 0.0;
-                             double path_y = 0.0;
-                             double dist_inc = 0.5; // The car moves 50 times in 1 second. move 0.5 meter 50 times = 25 m/s = 50MPH
-                             for (int i = 0; i < 50; i++)
-                             {
-                                 path_x = car_x + (dist_inc * i) * cos(deg2rad(car_yaw));
-                                 path_y = car_y + (dist_inc * i) * sin(deg2rad(car_yaw));
-                                 next_x_vals.push_back(path_x);
-                                 next_y_vals.push_back(path_y);
-                             }
-                             //End of TODO:
-                             */
-                            int prv_path_size = previous_path_x.size();
-                            double ref_x = car_x;
-                            double ref_y = car_y;
-                            double ref_yaw = deg2rad(car_yaw);
-                            std::vector<double> pts_x, pts_y;
-                     
-
-                            if (prv_path_size < 2)
-                            {
-                                /* Getting one previous point tangent to the current point. Intuitive formula (y2-y1)/(x2-x1) = tan(theta) */
-                                double prev_point_x = ref_x - cos(ref_yaw);
-                                double prev_point_y = ref_y - sin(ref_yaw);
-
-                                pts_x.push_back(prev_point_x);
-                                pts_y.push_back(prev_point_y);
-
-                                pts_x.push_back(ref_x);
-                                pts_y.push_back(ref_y);
-                            }
-                            else
-                            {
-                                /* Getting last two points from previous path */
-
-                                ref_x = previous_path_x[prv_path_size - 1];
-                                ref_y = previous_path_y[prv_path_size - 1];
-
-                                double x2 = previous_path_x[prv_path_size - 2];
-                                double y2 = previous_path_y[prv_path_size - 2];
-
-                                pts_x.push_back(ref_x);
-                                pts_y.push_back(ref_y);
-
-                                pts_x.push_back(x2);
-                                pts_y.push_back(y2);
-
-                                ref_yaw = atan2(y2 - ref_y, x2 - ref_x);
-
-                            }
-
-                            /* Adding three cartesian points from Frenet points that are equally spaced 30, 60, and 90 */
-                            std::vector<double> next_wp0 = getXY(car_s + 30, (2 + 4 * lane), map_waypoints_s, map_waypoints_x, map_waypoints_x);
-                            std::vector<double> next_wp1 = getXY(car_s + 60, (2 + 4 * lane), map_waypoints_s, map_waypoints_x, map_waypoints_x);
-                            std::vector<double> next_wp2 = getXY(car_s + 90, (2 + 4 * lane), map_waypoints_s, map_waypoints_x, map_waypoints_x);
-
-                            pts_x.push_back(next_wp0[0]);
-                            pts_y.push_back(next_wp0[1]);
-
-                            pts_x.push_back(next_wp1[0]);
-                            pts_y.push_back(next_wp1[1]);
-
-                            pts_x.push_back(next_wp2[0]);
-                            pts_y.push_back(next_wp2[1]);
-
-
-                            for (int i = 0; i < pts_x.size(); i++)
-                            {
-                                /* Converting point from world to robot coordinates*/
-                                double shift_x = pts_x[i] - ref_x;
-                                double shift_y = pts_y[i] - ref_x;
-
-                                double trans_x = shift_x * cos(0 - ref_yaw) - shift_y * sin(0 - ref_yaw);
-                                double trans_y = shift_x * sin(0 - ref_yaw) + shift_y * cos(0 - ref_yaw);
-
-                                pts_x[i] = trans_x;
-                                pts_y[i] = trans_y;
-                            }
-
-                            tk::spline s;
-                            s.set_points(pts_x, pts_y);
-
-                            for (int i = 0; i < prv_path_size; i++)
-                            {
-                                next_x_vals.push_back(previous_path_x[i]);
-                                next_y_vals.push_back(previous_path_y[i]);
-                            }
-
-                            double target_x = 30.0; // find spline curve till next 30 meters. 
-                            double target_y = s(target_x);
-                            double target_dist = sqrt(target_x*target_x + target_y * target_y);
-                            double add_on = 0.0;
-                            // N * 0.02 * velocity = 30
-                            double N = target_x / (0.02*ref_vel / 2.2369); //2.2369 is used to convert MPH to m/s
-                            for (int i = 0; i < 50 - previous_path_x.size(); i++)
-                            {
-                                double x = add_on + target_x / N;
-                                double y = s(x);
-                                add_on = x;
-
-                                /*transform back to world coordinate*/
-                                double x_temp = x;
-                                double y_temp = y;
-                                x = ref_x + x_temp * cos(ref_yaw) - y_temp * sin(ref_yaw);
-                                y = ref_y + x_temp * sin(ref_yaw) + y_temp * cos(ref_yaw);
-                                
-                                next_x_vals.push_back(x);
-                                next_y_vals.push_back(y);
-                            }
+                            path.path_planner_init();
+                            path.path_planner(car_x, car_y, car_s, car_d, car_yaw, car_speed, previous_path_x, previous_path_y, map_waypoints_s, map_waypoints_x, map_waypoints_y,
+                                next_x_vals, next_y_vals);
 
                             msgJson["next_x"] = next_x_vals;
                             msgJson["next_y"] = next_y_vals;
