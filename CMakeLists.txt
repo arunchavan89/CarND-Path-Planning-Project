@@ -5,9 +5,13 @@ cmake_minimum_required (VERSION 3.5)
 add_definitions(-std=c++11)
 
 set(CXX_FLAGS "-Wall")
-set(CMAKE_CXX_FLAGS, "${CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CXX_FLAGS}")
 
-set(sources src/main.cpp)
+file(GLOB HEADERS src/*.h)
+file(GLOB HEADERS_HPP src/*.hpp)
+
+set(sources src/main.cpp ${HEADERS} ${HEADERS_HPP})
+
 
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin") 
@@ -21,6 +25,22 @@ link_directories(/usr/local/Cellar/libuv/1.11.0/lib)
 endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin") 
 
 
+
+
+if (WIN32)
+    set(VCPKG_INSTALL ${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET})
+    message("Using vcpkg_install ${VCPKG_INSTALL}")
+    include_directories(${VCPKG_INSTALL}/include)
+    link_directories(${VCPKG_INSTALL}/lib)
+endif()
+
 add_executable(path_planning ${sources})
 
-target_link_libraries(path_planning z ssl uv uWS)
+if (NOT WIN32)
+    target_link_libraries(path_planning z ssl uv uWS)
+else()
+    target_link_libraries(path_planning ssleay32 libuv uWS ws2_32)
+    target_link_libraries(path_planning optimized zlib )
+	target_link_libraries(path_planning debug zlibd )
+endif()
+
