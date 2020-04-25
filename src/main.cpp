@@ -19,6 +19,11 @@ int main() {
 
     Map map;
 
+    /*Maximum speed allowed*/
+    double max_speed_MPH = 48.2;
+    double ref_vel = 0.0;
+    int lane = 1;
+
     // Waypoint map to read from
     string map_file_ = "../data/highway_map.csv";
     map.read_map(map_file_);
@@ -30,7 +35,7 @@ int main() {
     std::vector<double> map_waypoints_dy = map.map_waypoints_dy;
 
     h.onMessage([&map_waypoints_x, &map_waypoints_y, &map_waypoints_s,
-        &map_waypoints_dx, &map_waypoints_dy]
+        &map_waypoints_dx, &map_waypoints_dy, &max_speed_MPH, &ref_vel, &lane]
         (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
             uWS::OpCode opCode) {
                 // "42" at the start of the message means there's a websocket message event.
@@ -38,7 +43,7 @@ int main() {
                 // The 2 signifies a websocket event
                 if (length && length > 2 && data[0] == '4' && data[1] == '2') {
 
-                    PathPlanner path;                    
+                    PathPlanner path_planner;
 
                     auto s = hasData(data);
 
@@ -51,12 +56,13 @@ int main() {
                             // j[1] is the data JSON object
 
                             // Main car's localization Data
-                            path.car_parameters_t.car_x = j[1]["x"];
-                            path.car_parameters_t.car_y = j[1]["y"];
-                            path.car_parameters_t.car_s = j[1]["s"];
-                            path.car_parameters_t.car_d = j[1]["d"];
-                            path.car_parameters_t.car_yaw = j[1]["yaw"];
-                            path.car_parameters_t.car_speed = j[1]["speed"];
+                            path_planner.car_parameters_t.car_x = j[1]["x"];
+                            path_planner.car_parameters_t.car_y = j[1]["y"];
+                            double car_s = j[1]["s"];
+                            path_planner.car_parameters_t.car_d = j[1]["d"];
+                            path_planner.car_parameters_t.car_yaw = j[1]["yaw"];
+                            path_planner.car_parameters_t.car_speed = j[1]["speed"];
+                            path_planner.car_parameters_t.car_s = car_s;
 
                             // Previous path data given to the Planner
                             auto previous_path_x = j[1]["previous_path_x"];
@@ -70,12 +76,58 @@ int main() {
                             auto sensor_fusion = j[1]["sensor_fusion"];
 
                             json msgJson;
+                            int prev_size = previous_path_x.size();
+
+                            if (prev_size > 0)
+                            {
+                                car_s = end_path_s;
+                            }
+
+                            bool car_left = false;
+                            bool car_right = false;
+                            bool car_ahead = false;
+                            bool too_close = false;
+
+                            for (int i = 0; i < sensor_fusion.size(); i++)
+                            {
+                                double d = sensor_fusion[i][6];
+                                double vx = sensor_fusion[i][3];
+                                double vy = sensor_fusion[i][4];
+                                double check_speed = sqrt(vx * vx + vy * vy);
+                                double check_car_s = sensor_fusion[i][5];
+
+                                //This will help to predict the where the vehicle will be in future
+                                check_car_s += ((double)prev_size * 0.02 * check_speed);
+
+                                if ((d > 4) && (d < 8))
+                                {
+                                    //A vehicle is on the same line and check the car is in front of the ego car
+                                    if (check_car_s > car_s && (check_car_s - car_s) < 30)
+                                    {
+                                        too_close = true;
+                                    }
+
+                                }
+
+                            }
+
+                            double offset = 1.8;
+                            if (too_close)
+                            {
+                                ref_vel -= offset;
+                            }
+                            else if (ref_vel < max_speed_MPH)
+                            {
+                                ref_vel += offset;
+                            }
+
+                            path_planner.path_planner_init(ref_vel);
 
                             vector<double> next_x_vals;
                             vector<double> next_y_vals;
 
-                            path.path_planner_init();
-                            path.path_planner(path.car_parameters_t, previous_path_x, previous_path_y, map_waypoints_s, map_waypoints_x, map_waypoints_y,
+
+                            path_planner.path_planner(path_planner.car_parameters_t, previous_path_x, previous_path_y, map_waypoints_s, map_waypoints_x, map_waypoints_y,
                                 next_x_vals, next_y_vals);
 
                             msgJson["next_x"] = next_x_vals;

@@ -17,7 +17,7 @@ public:
         double car_speed;
     }car_parameters_t;
 
-    void path_planner_init();
+    void path_planner_init(double ref_vel);
 
     void path_planner(s_car_parameters_t car_params,
         std::vector<double>previous_path_x, std::vector<double>previous_path_y,
@@ -38,7 +38,7 @@ public:
     // Size of the previous path
     int prev_size;
 
-    
+    double ref_vel; //MPH
 
     /*--------------------------------------Helper Functions------------------------------------------------*/
 
@@ -78,9 +78,7 @@ public:
 
 private:
 
-    int lane;
-
-    double ref_vel; //MPH
+    int lane;   
 
     double ref_vel_m_per_sec;
 

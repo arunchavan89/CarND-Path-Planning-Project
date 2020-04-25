@@ -2,10 +2,9 @@
 #include "spline.h"
 //#include "helpers.h"
 
-void PathPlanner::path_planner_init()
+void PathPlanner::path_planner_init(double ref_vel)
 {
-    lane = 1;                                   // Middle lane
-    ref_vel = 49.50;                            // MPH
+    lane = 1;                                   // Middle lane                            
     ref_vel_m_per_sec = ref_vel / 2.23694;      // velocity in m/sec
     target_x = 30.0;                            // creating spline till next 30 meters
     time_per_frame = 0.02;                      // time in second per frame; 50 FPS
