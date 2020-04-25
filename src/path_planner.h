@@ -1,22 +1,46 @@
 # ifndef _PATH_PLANNER_H_
 # define _PATH_PLANNER_H_
 
-//#include "helpers.h"
+
 #include <vector>
+
 class PathPlanner
 {
 public:
 
+    struct s_car_parameters_t {
+        double car_x;
+        double car_y;
+        double car_s;
+        double car_d;
+        double car_yaw;
+        double car_speed;
+    }car_parameters_t;
+
     void path_planner_init();
-    void path_planner(double car_x, double car_y,
-        double car_s, double car_d, double car_yaw, double car_speed,
+
+    void path_planner(s_car_parameters_t car_params,
         std::vector<double>previous_path_x, std::vector<double>previous_path_y,
         std::vector<double> map_waypoints_s, std::vector<double>map_waypoints_x, std::vector<double>map_waypoints_y,
         std::vector<double> &next_x_vals, std::vector<double> &next_y_vals);
 
-    int lane;
+    void create_spline_trajectory(std::vector<double>previous_path_x, std::vector<double>previous_path_y,
+        std::vector<double> &next_x_vals, std::vector<double> &next_y_vals);
 
-    double ref_vel; //MPH
+    std::vector<double> pts_x;
+    std::vector<double> pts_y;
+
+    // Reference x, y, and yaw states
+    double ref_x;
+    double ref_y;
+    double ref_yaw;
+
+    // Size of the previous path
+    int prev_size;
+
+    
+
+    /*--------------------------------------Helper Functions------------------------------------------------*/
 
     constexpr double pi() { return 3.141592; }
     double deg2rad(double x) { return x * pi() / 180; }
@@ -51,5 +75,17 @@ public:
 
         return { x,y };
     }
+
+private:
+
+    int lane;
+
+    double ref_vel; //MPH
+
+    double ref_vel_m_per_sec;
+
+    double target_x;
+
+    double time_per_frame;
 };
 # endif /*_PATH_PLANNER_H_*/

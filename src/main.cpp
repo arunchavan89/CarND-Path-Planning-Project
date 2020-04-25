@@ -38,8 +38,7 @@ int main() {
                 // The 2 signifies a websocket event
                 if (length && length > 2 && data[0] == '4' && data[1] == '2') {
 
-                    PathPlanner path;
-
+                    PathPlanner path;                    
 
                     auto s = hasData(data);
 
@@ -52,12 +51,12 @@ int main() {
                             // j[1] is the data JSON object
 
                             // Main car's localization Data
-                            double car_x = j[1]["x"];
-                            double car_y = j[1]["y"];
-                            double car_s = j[1]["s"];
-                            double car_d = j[1]["d"];
-                            double car_yaw = j[1]["yaw"];
-                            double car_speed = j[1]["speed"];
+                            path.car_parameters_t.car_x = j[1]["x"];
+                            path.car_parameters_t.car_y = j[1]["y"];
+                            path.car_parameters_t.car_s = j[1]["s"];
+                            path.car_parameters_t.car_d = j[1]["d"];
+                            path.car_parameters_t.car_yaw = j[1]["yaw"];
+                            path.car_parameters_t.car_speed = j[1]["speed"];
 
                             // Previous path data given to the Planner
                             auto previous_path_x = j[1]["previous_path_x"];
@@ -76,7 +75,7 @@ int main() {
                             vector<double> next_y_vals;
 
                             path.path_planner_init();
-                            path.path_planner(car_x, car_y, car_s, car_d, car_yaw, car_speed, previous_path_x, previous_path_y, map_waypoints_s, map_waypoints_x, map_waypoints_y,
+                            path.path_planner(path.car_parameters_t, previous_path_x, previous_path_y, map_waypoints_s, map_waypoints_x, map_waypoints_y,
                                 next_x_vals, next_y_vals);
 
                             msgJson["next_x"] = next_x_vals;
