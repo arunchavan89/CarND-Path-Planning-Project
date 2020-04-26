@@ -41,7 +41,7 @@ public:
 
     /*--------------------------------------Helper Functions------------------------------------------------*/
 
-    constexpr double pi() { return 3.141592; }
+    double pi() { return 3.141592; }
     double deg2rad(double x) { return x * pi() / 180; }
     double rad2deg(double x) { return x * 180 / pi(); }
 

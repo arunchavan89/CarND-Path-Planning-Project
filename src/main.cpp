@@ -89,8 +89,8 @@ int main() {
                             bool car_lane_2 = false;
                             bool car_ahead = false;
                             bool emergency_brake = false;
-                            double offset = 0.5;
-                            double offset_pos_accln = 1.2;
+                            double offset = 0.224;
+                            double offset_pos_accln = 0.224;
                             double emergency_braking = 15.0;
                             double speed_car_ahead = 0.0;
 
