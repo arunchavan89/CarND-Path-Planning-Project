@@ -9,8 +9,9 @@ set(CMAKE_CXX_FLAGS "${CXX_FLAGS}")
 
 file(GLOB HEADERS src/*.h)
 file(GLOB HEADERS_HPP src/*.hpp)
+file(GLOB HEADERS_CPP src/*.cpp)
 
-set(sources src/main.cpp ${HEADERS} ${HEADERS_HPP})
+set(sources ${HEADERS_CPP} ${HEADERS} ${HEADERS_HPP})
 
 
 
