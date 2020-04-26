@@ -17,7 +17,7 @@ public:
         double car_speed;
     }car_parameters_t;
 
-    void path_planner_init(double ref_vel);
+    void path_planner_init(double ref_vel, int lane_number);
 
     void path_planner(s_car_parameters_t car_params,
         std::vector<double>previous_path_x, std::vector<double>previous_path_y,

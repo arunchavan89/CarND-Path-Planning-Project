@@ -20,7 +20,7 @@ int main() {
     Map map;
 
     /*Maximum speed allowed*/
-    double max_speed_MPH = 48.2;
+    double max_speed_MPH = 49.5;
     double ref_vel = 0.0;
     int lane = 1;
 
@@ -83,10 +83,14 @@ int main() {
                                 car_s = end_path_s;
                             }
 
-                            bool car_left = false;
-                            bool car_right = false;
+                            bool car_lane_0 = false;
+                            bool car_lane_1 = false;
+                            bool car_lane_2 = false;
                             bool car_ahead = false;
-                            bool too_close = false;
+                            bool emergency_brake = false;
+                            double offset = 0.5;
+                            double emergency_braking = 5.0;
+                            double speed_car_ahead = 0.0;
 
                             for (int i = 0; i < sensor_fusion.size(); i++)
                             {
@@ -99,29 +103,84 @@ int main() {
                                 //This will help to predict the where the vehicle will be in future
                                 check_car_s += ((double)prev_size * 0.02 * check_speed);
 
+                                if ((d < (2 + 4 * lane + 2)) && (d > (2 + 4 * lane - 2)))
+                                {
+                                    if ((check_car_s > car_s) && (check_car_s - car_s) < 30)
+                                    {
+                                        car_ahead = true;
+                                        speed_car_ahead = check_speed;
+                                        if ((check_car_s - car_s) < 5)
+                                        {
+                                            emergency_brake = true;
+                                        }
+                                    }
+                                }
+
+                                if ((d > 0) && (d < 4))
+                                {
+                                    if (((check_car_s > car_s) && (check_car_s - car_s) < 35) || ((car_s > check_car_s) && (car_s - check_car_s) < 10))
+                                    {
+                                        car_lane_0 = true;
+                                    }
+                                }
                                 if ((d > 4) && (d < 8))
                                 {
-                                    //A vehicle is on the same line and check the car is in front of the ego car
-                                    if (check_car_s > car_s && (check_car_s - car_s) < 30)
+                                    if (((check_car_s > car_s) && (check_car_s - car_s) < 35) || ((car_s > check_car_s) && (car_s - check_car_s) < 10))
                                     {
-                                        too_close = true;
+                                        car_lane_1 = true;
                                     }
-
+                                }
+                                if ((d > 8) && (d < 12))
+                                {
+                                    if (((check_car_s > car_s) && (check_car_s - car_s) < 35) || ((car_s > check_car_s) && (car_s - check_car_s) < 10))
+                                    {
+                                        car_lane_2 = true;
+                                    }
                                 }
 
                             }
 
-                            double offset = 1.8;
-                            if (too_close)
+
+
+                            if (car_ahead)
                             {
-                                ref_vel -= offset;
+                                if ((lane == 1) && !car_lane_0)
+                                {
+                                    lane--;
+                                }
+                                else if ((lane == 1) && !car_lane_2)
+                                {
+                                    lane++;
+                                }
+                                else if ((lane == 2) && !car_lane_1)
+                                {
+                                    lane--;
+                                }
+                                else if ((lane == 0) && !car_lane_1)
+                                {
+                                    lane++;
+                                }
+                                else
+                                {
+                                    if (emergency_brake)
+                                    {
+                                        ref_vel -= emergency_braking;
+                                    }
+                                    else
+                                    {
+                                        if (ref_vel != speed_car_ahead)
+                                        {
+                                            ref_vel -= offset;
+                                        }
+                                    }
+                                }
                             }
                             else if (ref_vel < max_speed_MPH)
                             {
                                 ref_vel += offset;
                             }
 
-                            path_planner.path_planner_init(ref_vel);
+                            path_planner.path_planner_init(ref_vel, lane);
 
                             vector<double> next_x_vals;
                             vector<double> next_y_vals;
