@@ -2,7 +2,7 @@
 #include "spline.h"
 //#include "helpers.h"
 
-void PathPlanner::path_planner_init(double ref_vel, int lane_number)
+void PathPlanner::path_planner_init(int lane_number, double ref_vel)
 {
     lane = lane_number;                                   // Middle lane                            
     ref_vel_m_per_sec = ref_vel / 2.24;      // velocity in m/sec

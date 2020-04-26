@@ -8,6 +8,7 @@
 #include "spline.h"
 #include "map.h"
 #include "path_planner.h"
+#include "prediction.h"
 
 // for convenience
 using nlohmann::json;
@@ -19,11 +20,9 @@ int main() {
 
     Map map;
 
-    /*Maximum speed allowed*/
-    double max_speed_MPH = 49.0;
-    double max_speed_MPH_1 = 47.0;
-    double ref_vel = 0.0;
+    bool prediction_initialized = false;
     int lane = 1;
+    double ref_vel = 0.0;
 
     // Waypoint map to read from
     string map_file_ = "../data/highway_map.csv";
@@ -36,7 +35,7 @@ int main() {
     std::vector<double> map_waypoints_dy = map.map_waypoints_dy;
 
     h.onMessage([&map_waypoints_x, &map_waypoints_y, &map_waypoints_s,
-        &map_waypoints_dx, &map_waypoints_dy, &max_speed_MPH, &ref_vel, &lane, &max_speed_MPH_1]
+        &map_waypoints_dx, &map_waypoints_dy, &prediction_initialized, &lane, &ref_vel]
         (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
             uWS::OpCode opCode) {
                 // "42" at the start of the message means there's a websocket message event.
@@ -44,6 +43,7 @@ int main() {
                 // The 2 signifies a websocket event
                 if (length && length > 2 && data[0] == '4' && data[1] == '2') {
 
+                    Prediction obj_prediction;
                     PathPlanner path_planner;
 
                     auto s = hasData(data);
@@ -78,121 +78,13 @@ int main() {
 
                             json msgJson;
                             int prev_size = previous_path_x.size();
-
-                            if (prev_size > 0)
-                            {
-                                car_s = end_path_s;
-                            }
-
-                            bool car_lane_0 = false;
-                            bool car_lane_1 = false;
-                            bool car_lane_2 = false;
-                            bool car_ahead = false;
-                            bool emergency_brake = false;
-                            double offset = 0.224;
-                            double offset_pos_accln = 0.224;
-                            double emergency_braking = 15.0;
-                            double speed_car_ahead = 0.0;
-
-                            for (int i = 0; i < sensor_fusion.size(); i++)
-                            {
-                                double d = sensor_fusion[i][6];
-                                double vx = sensor_fusion[i][3];
-                                double vy = sensor_fusion[i][4];
-                                double check_speed = sqrt(vx * vx + vy * vy);
-                                double check_car_s = sensor_fusion[i][5];
-
-                                //This will help to predict the where the vehicle will be in future
-                                check_car_s += ((double)prev_size * 0.02 * check_speed);
-
-                                if ((d < (2 + 4 * lane + 2)) && (d > (2 + 4 * lane - 2)))
-                                {
-                                    if ((check_car_s > car_s) && (check_car_s - car_s) < 30)
-                                    {
-                                        car_ahead = true;
-                                        speed_car_ahead = check_speed;
-                                        if ((check_car_s - car_s) < 5)
-                                        {
-                                            emergency_brake = true;
-                                        }
-                                    }
-                                }
-
-                                if ((d > 0) && (d < 4))
-                                {
-                                    if (((check_car_s > car_s) && (check_car_s - car_s) < 35) || ((car_s > check_car_s) && (car_s - check_car_s) < 10))
-                                    {
-                                        car_lane_0 = true;
-                                    }
-                                }
-                                if ((d > 4) && (d < 8))
-                                {
-                                    if (((check_car_s > car_s) && (check_car_s - car_s) < 35) || ((car_s > check_car_s) && (car_s - check_car_s) < 10))
-                                    {
-                                        car_lane_1 = true;
-                                    }
-                                }
-                                if ((d > 8) && (d < 12))
-                                {
-                                    if (((check_car_s > car_s) && (check_car_s - car_s) < 35) || ((car_s > check_car_s) && (car_s - check_car_s) < 10))
-                                    {
-                                        car_lane_2 = true;
-                                    }
-                                }
-
-                            }
-
-                            if (car_ahead)
-                            {
-                                if ((lane == 1) && !car_lane_0)
-                                {
-                                    lane--;
-                                }
-                                else if ((lane == 1) && !car_lane_2)
-                                {
-                                    lane++;
-                                }
-                                else if ((lane == 2) && !car_lane_1)
-                                {
-                                    lane--;
-                                }
-                                else if ((lane == 0) && !car_lane_1)
-                                {
-                                    lane++;
-                                }
-                                else
-                                {
-                                    if (emergency_brake)
-                                    {
-                                        ref_vel -= emergency_braking;
-                                    }
-                                    else
-                                    {
-                                        if (ref_vel != speed_car_ahead)
-                                        {
-                                            ref_vel -= offset;
-                                        }
-                                    }
-                                }
-                            }
-                            else if (ref_vel < max_speed_MPH)
-                            {
-                                if (ref_vel < max_speed_MPH_1)
-                                {
-                                    ref_vel += offset_pos_accln;
-                                }
-                                if (ref_vel < max_speed_MPH)
-                                {
-                                    ref_vel += offset;
-                                }
-                            }
-
-                            path_planner.path_planner_init(ref_vel, lane);
-
                             vector<double> next_x_vals;
                             vector<double> next_y_vals;
 
+                            obj_prediction.prediction_init();                            
+                            obj_prediction.prediction_doit(prev_size, end_path_s, sensor_fusion, lane, ref_vel);
 
+                            path_planner.path_planner_init(lane, ref_vel);
                             path_planner.path_planner(path_planner.car_parameters_t, previous_path_x, previous_path_y, map_waypoints_s, map_waypoints_x, map_waypoints_y,
                                 next_x_vals, next_y_vals);
 
