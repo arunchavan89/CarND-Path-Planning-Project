@@ -20,7 +20,7 @@ int main() {
     Map map;
 
     /*Maximum speed allowed*/
-    double max_speed_MPH = 49.5;
+    double max_speed_MPH = 49.0;
     double ref_vel = 0.0;
     int lane = 1;
 
@@ -177,7 +177,14 @@ int main() {
                             }
                             else if (ref_vel < max_speed_MPH)
                             {
-                                ref_vel += offset;
+                                if (ref_vel < 46.0)
+                                {
+                                    ref_vel += 1.5;
+                                }
+                                if (ref_vel < max_speed_MPH)
+                                {
+                                    ref_vel += offset;
+                                }
                             }
 
                             path_planner.path_planner_init(ref_vel, lane);
