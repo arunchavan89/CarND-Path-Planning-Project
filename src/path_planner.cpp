@@ -5,7 +5,7 @@
 void PathPlanner::path_planner_init(double ref_vel, int lane_number)
 {
     lane = lane_number;                                   // Middle lane                            
-    ref_vel_m_per_sec = ref_vel / 2.23694;      // velocity in m/sec
+    ref_vel_m_per_sec = ref_vel / 2.24;      // velocity in m/sec
     target_x = 30.0;                            // creating spline till next 30 meters
     time_per_frame = 0.02;                      // time in second per frame; 50 FPS
 }
@@ -112,7 +112,7 @@ void PathPlanner::create_spline_trajectory(std::vector<double>previous_path_x, s
 
     // Calculate distance y position on 30 m ahead.
     double target_y = s(target_x);
-    double target_dist = sqrt(target_x*target_x + target_y * target_y);
+    double target_dist = sqrt(target_x * target_x + target_y * target_y);
 
     double x_add_on = 0;
 

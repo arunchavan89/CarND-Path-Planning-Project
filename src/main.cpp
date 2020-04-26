@@ -21,6 +21,7 @@ int main() {
 
     /*Maximum speed allowed*/
     double max_speed_MPH = 49.0;
+    double max_speed_MPH_1 = 47.0;
     double ref_vel = 0.0;
     int lane = 1;
 
@@ -35,7 +36,7 @@ int main() {
     std::vector<double> map_waypoints_dy = map.map_waypoints_dy;
 
     h.onMessage([&map_waypoints_x, &map_waypoints_y, &map_waypoints_s,
-        &map_waypoints_dx, &map_waypoints_dy, &max_speed_MPH, &ref_vel, &lane]
+        &map_waypoints_dx, &map_waypoints_dy, &max_speed_MPH, &ref_vel, &lane, &max_speed_MPH_1]
         (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
             uWS::OpCode opCode) {
                 // "42" at the start of the message means there's a websocket message event.
@@ -89,7 +90,8 @@ int main() {
                             bool car_ahead = false;
                             bool emergency_brake = false;
                             double offset = 0.5;
-                            double emergency_braking = 5.0;
+                            double offset_pos_accln = 1.2;
+                            double emergency_braking = 15.0;
                             double speed_car_ahead = 0.0;
 
                             for (int i = 0; i < sensor_fusion.size(); i++)
@@ -140,8 +142,6 @@ int main() {
 
                             }
 
-
-
                             if (car_ahead)
                             {
                                 if ((lane == 1) && !car_lane_0)
@@ -177,9 +177,9 @@ int main() {
                             }
                             else if (ref_vel < max_speed_MPH)
                             {
-                                if (ref_vel < 46.0)
+                                if (ref_vel < max_speed_MPH_1)
                                 {
-                                    ref_vel += 1.5;
+                                    ref_vel += offset_pos_accln;
                                 }
                                 if (ref_vel < max_speed_MPH)
                                 {
