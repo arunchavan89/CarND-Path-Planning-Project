@@ -38,7 +38,6 @@ public:
     // Size of the previous path
     int prev_size;
 
-    double ref_vel; //MPH
 
     /*--------------------------------------Helper Functions------------------------------------------------*/
 
