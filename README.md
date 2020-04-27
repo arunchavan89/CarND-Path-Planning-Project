@@ -9,7 +9,7 @@ Self-Driving Car Engineer Nanodegree Program
 [image4]: ./attachments/poly_eq_1.PNG "formula_1 Image"
 [image5]: ./attachments/polyequ.PNG "polyequ Image"
 [image6]: ./attachments/spline.PNG "spline Image"
-
+[image7]: ./attachments/homo_transformation.PNG "homo_transformation Image"
 
 ## Goal
 In this project the goal is to safely navigate around a virtual highway with other traffic that is driving +-10 MPH of the 50 MPH speed limit. The car's localization and sensor fusion data will be provided, there is also a sparse map list of waypoints around the highway. The car should try to go as close as possible to the 50 MPH speed limit, which means passing slower traffic when possible, note that other cars will try to change lanes too. The car should avoid hitting other cars at all cost as well as driving inside of the marked road lanes at all times, unless going from one lane to another. The car should be able to make one complete loop around the 6946m highway. Since the car is trying to go 50 MPH, it should take a little over 5 minutes to complete 1 loop. Also the car should not experience total acceleration over 10 m/s^2 and jerk that is greater than 10 m/s^3.
@@ -34,36 +34,63 @@ In this project the goal is to safely navigate around a virtual highway with oth
 ### Simulator.
 You can download the Term3 Simulator which contains the Path Planning Project from the [releases tab (https://github.com/udacity/self-driving-car-sim/releases/tag/T3_v1.2).  
 
-Here is the data provided from the Simulator to the C++ Program
+# Fundamentals
+
+## Behaviour Control 
+* An overview of the behavior control is as shown in the following Figure.
+<p align="center">
+  <img width="500" height="300" src="attachments/behaviour_control.PNG">
+</p>
+
+* The module is typically decomposed into the following set of sub-modules:
+* Predictions: Predicting the trajectories of the surrounding detected objects.
+* Behaviour Planner: Defining a set of candidate high level targets for the vehicle to follow (lane changes, slow down, emergency braking etc)
+* Trajectory: Finding a percise path to drive the ego vehicle.
+
+## Frenet and Cartesian Coordinates
+* Frenet Coordinates are a way of representing position on a road in a more intuitive way than traditional '(x,y)' Cartesian Coordinates.
+* The coordinates use variables 's' and 'd' to describe a vehicle's position on the road. 
+* The 's' coordinate represents distance along the road also known as longitudinal displacement.
+* The 'd' coordinate represents side-to-side position on the road also known as lateral displacement.
+
+<p align="center">
+  <img width="300" height="300" src="attachments/frenet3.PNG">
+</p>
+
+## Spline
+
+* A really helpful resource for doing this project and creating smooth trajectories was using http://kluge.in-chemnitz.de/opensource/spline/, the spline function is in a single hearder file is really easy to use.
+
+## Vehicle and Map (World) coordinates transformation
+* From the world to the robot:
+
+<p align="center">
+  <img width="500" height="200" src="attachments/homo_transformation.PNG">
+</p>
+
+## Sensor Fusion
 
 #### Main car's localization Data (No Noise)
 
-["x"] The car's x position in map coordinates
+* 'x' : car's x position in map coordinates
 
-["y"] The car's y position in map coordinates
+* 'y' : car's y position in map coordinates
 
-["s"] The car's s position in frenet coordinates
+* 's' : car's s position in frenet coordinates
 
-["d"] The car's d position in frenet coordinates
+* 'd' : car's d position in frenet coordinates
 
-["yaw"] The car's yaw angle in the map
+* 'yaw' : car's yaw angle in the map
 
-["speed"] The car's speed in MPH
+* 'speed' : car's speed in MPH
 
-#### Previous path data given to the Planner
+* 'previous_path_x' : previous list of x points previously given to the simulator
 
-//Note: Return the previous list but with processed points removed, can be a nice tool to show how far along
-the path has processed since last time. 
+* 'previous_path_y' : previous list of y points previously given to the simulator
 
-["previous_path_x"] The previous list of x points previously given to the simulator
+* 'end_path_s' : previous list's last point's frenet s value
 
-["previous_path_y"] The previous list of y points previously given to the simulator
-
-#### Previous path's end s and d values 
-
-["end_path_s"] The previous list's last point's frenet s value
-
-["end_path_d"] The previous list's last point's frenet d value
+* 'end_path_d' : previous list's last point's frenet d value
 
 #### Sensor Fusion Data, a list of all other car's attributes on the same side of the road. (No Noise)
 
@@ -75,11 +102,6 @@ the path has processed since last time.
 
 2. There will be some latency between the simulator running and the path planner returning a path, with optimized code usually its not very long maybe just 1-3 time steps. During this delay the simulator will continue using points that it was last given, because of this its a good idea to store the last points you have used so you can have a smooth transition. previous_path_x, and previous_path_y can be helpful for this transition since they show the last points given to the simulator controller with the processed points already removed. You would either return a path that extends this previous path or make sure to create a new path that has a smooth transition with this last path.
 
-## Tips
-
-A really helpful resource for doing this project and creating smooth trajectories was using http://kluge.in-chemnitz.de/opensource/spline/, the spline function is in a single hearder file is really easy to use.
-
----
 
 ## Dependencies
 
