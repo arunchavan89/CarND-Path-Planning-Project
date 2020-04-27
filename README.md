@@ -10,6 +10,7 @@ Self-Driving Car Engineer Nanodegree Program
 [image5]: ./attachments/polyequ.PNG "polyequ Image"
 [image6]: ./attachments/spline.PNG "spline Image"
 [image7]: ./attachments/homo_transformation.PNG "homo_transformation Image"
+[image8]: ./attachments/input.PNG "quintic Image"
 
 ## Goal
 In this project the goal is to safely navigate around a virtual highway with other traffic that is driving +-10 MPH of the 50 MPH speed limit. The car's localization and sensor fusion data will be provided, there is also a sparse map list of waypoints around the highway. The car should try to go as close as possible to the 50 MPH speed limit, which means passing slower traffic when possible, note that other cars will try to change lanes too. The car should avoid hitting other cars at all cost as well as driving inside of the marked road lanes at all times, unless going from one lane to another. The car should be able to make one complete loop around the 6946m highway. Since the car is trying to go 50 MPH, it should take a little over 5 minutes to complete 1 loop. Also the car should not experience total acceleration over 10 m/s^2 and jerk that is greater than 10 m/s^3.
@@ -61,12 +62,34 @@ You can download the Term3 Simulator which contains the Path Planning Project fr
 
 * A really helpful resource for doing this project and creating smooth trajectories was using http://kluge.in-chemnitz.de/opensource/spline/, the spline function is in a single hearder file is really easy to use.
 
+## Polynomial solver for jerk minimization (A quintic polynomial solver) 
+
+*  A quintic polynomial solver takes boundary conditions as input and generate a polynomial trajectory which matches those conditions with minimal jerk.
+
+* The inputs for polynomial solver are shown in the following image. 
+<p align="center">
+  <img width="500" height="300" src="attachments/input.PNG">
+</p>
+
+* The following six coefficients are to be calculated
+<p align="center">
+  <img width="500" height="300" src="attachments/poly_eq_1.PNG">
+</p>
+
+* The equation to solve is as follows:
+<p align="center">
+  <img width="500" height="400" src="attachments/polyequ.PNG">
+</p>
+
 ## Vehicle and Map (World) coordinates transformation
 * From the world to the robot:
 
 <p align="center">
   <img width="500" height="200" src="attachments/homo_transformation.PNG">
 </p>
+
+
+
 
 ## Sensor Fusion
 
@@ -101,6 +124,81 @@ You can download the Term3 Simulator which contains the Path Planning Project fr
 1. The car uses a perfect controller and will visit every (x,y) point it recieves in the list every .02 seconds. The units for the (x,y) points are in meters and the spacing of the points determines the speed of the car. The vector going from a point to the next point in the list dictates the angle of the car. Acceleration both in the tangential and normal directions is measured along with the jerk, the rate of change of total Acceleration. The (x,y) point paths that the planner recieves should not have a total acceleration that goes over 10 m/s^2, also the jerk should not go over 50 m/s^3. (NOTE: As this is BETA, these requirements might change. Also currently jerk is over a .02 second interval, it would probably be better to average total acceleration over 1 second and measure jerk from that.
 
 2. There will be some latency between the simulator running and the path planner returning a path, with optimized code usually its not very long maybe just 1-3 time steps. During this delay the simulator will continue using points that it was last given, because of this its a good idea to store the last points you have used so you can have a smooth transition. previous_path_x, and previous_path_y can be helpful for this transition since they show the last points given to the simulator controller with the processed points already removed. You would either return a path that extends this previous path or make sure to create a new path that has a smooth transition with this last path.
+
+## Algorithm :
+
+* The following code snippet implements the logic for detecting a vehicle ahead of the ego vehicle.
+* It also sets a flag for the emergency braking in case if the distance between the ego vehicle and the vehicle in front is very close.  
+```
+/* Check if any vehicle is ahead of the ego vehicle */
+if ((d < (2 + 4 * lane + 2)) && (d > (2 + 4 * lane - 2)))
+{
+    if ((check_car_s > car_s) && (check_car_s - car_s) < 30)
+    {
+        car_ahead = true;
+        speed_car_ahead = check_speed;
+        if ((check_car_s > car_s) && (check_car_s - car_s) < 10)
+        {
+            emergency_brake = true;
+        }
+    }
+}
+```
+
+* The following logic is implemented for changing lanes if a vehicle is ahead of the ego vehicle.
+```
+if (car_ahead)
+{
+    if ((lane == 1) && !car_lane_0)
+    {
+        lane--;
+    }
+    else if ((lane == 1) && !car_lane_2)
+    {
+        lane++;
+    }
+    else if ((lane == 2) && !car_lane_1)
+    {
+        lane--;
+    }
+    else if ((lane == 0) && !car_lane_1)
+    {
+        lane++;
+    }
+    else
+    {
+        if (emergency_brake)
+        {
+            /* Possibility of getting jerk but good for safety */
+            std::cout << "Emergency Brake:" << std::endl;
+            ref_vel -= emergency_braking;
+        }
+        else
+        {
+            if (ref_vel != speed_car_ahead)
+            {
+                ref_vel -= accleration_rate;
+            }
+        }
+    }
+}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ## Dependencies
