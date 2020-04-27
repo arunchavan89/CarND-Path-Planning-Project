@@ -10,6 +10,7 @@ Self-Driving Car Engineer Nanodegree Program
 [image5]: ./attachments/polyequ.PNG "polyequ Image"
 [image6]: ./attachments/spline.PNG "spline Image"
 [image7]: ./attachments/homo_transformation.PNG "homo_transformation Image"
+[image8]: ./attachments/input.PNG "quintic Image"
 
 ## Goal
 In this project the goal is to safely navigate around a virtual highway with other traffic that is driving +-10 MPH of the 50 MPH speed limit. The car's localization and sensor fusion data will be provided, there is also a sparse map list of waypoints around the highway. The car should try to go as close as possible to the 50 MPH speed limit, which means passing slower traffic when possible, note that other cars will try to change lanes too. The car should avoid hitting other cars at all cost as well as driving inside of the marked road lanes at all times, unless going from one lane to another. The car should be able to make one complete loop around the 6946m highway. Since the car is trying to go 50 MPH, it should take a little over 5 minutes to complete 1 loop. Also the car should not experience total acceleration over 10 m/s^2 and jerk that is greater than 10 m/s^3.
@@ -61,12 +62,34 @@ You can download the Term3 Simulator which contains the Path Planning Project fr
 
 * A really helpful resource for doing this project and creating smooth trajectories was using http://kluge.in-chemnitz.de/opensource/spline/, the spline function is in a single hearder file is really easy to use.
 
+## Polynomial solver for jerk minimization (A quintic polynomial solver) 
+
+*  A quintic polynomial solver takes boundary conditions as input and generate a polynomial trajectory which matches those conditions with minimal jerk.
+
+* The inputs for polynomial solver are shown in the following image. 
+<p align="center">
+  <img width="500" height="300" src="attachments/input.PNG">
+</p>
+
+* The following six coefficients are to be calculated
+<p align="center">
+  <img width="500" height="300" src="attachments/poly_eq_1.PNG">
+</p>
+
+* The equation to solve is as follows:
+<p align="center">
+  <img width="500" height="400" src="attachments/polyequ.PNG">
+</p>
+
 ## Vehicle and Map (World) coordinates transformation
 * From the world to the robot:
 
 <p align="center">
   <img width="500" height="200" src="attachments/homo_transformation.PNG">
 </p>
+
+
+
 
 ## Sensor Fusion
 
@@ -102,6 +125,7 @@ You can download the Term3 Simulator which contains the Path Planning Project fr
 
 2. There will be some latency between the simulator running and the path planner returning a path, with optimized code usually its not very long maybe just 1-3 time steps. During this delay the simulator will continue using points that it was last given, because of this its a good idea to store the last points you have used so you can have a smooth transition. previous_path_x, and previous_path_y can be helpful for this transition since they show the last points given to the simulator controller with the processed points already removed. You would either return a path that extends this previous path or make sure to create a new path that has a smooth transition with this last path.
 
+## Algorithm :
 
 ## Dependencies
 
