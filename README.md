@@ -127,6 +127,80 @@ You can download the Term3 Simulator which contains the Path Planning Project fr
 
 ## Algorithm :
 
+* The following code snippet implements the logic for detecting a vehicle ahead of the ego vehicle.
+* It also sets a flag for the emergency braking in case if the distance between the ego vehicle and the vehicle in front is very close.  
+```
+/* Check if any vehicle is ahead of the ego vehicle */
+if ((d < (2 + 4 * lane + 2)) && (d > (2 + 4 * lane - 2)))
+{
+    if ((check_car_s > car_s) && (check_car_s - car_s) < 30)
+    {
+        car_ahead = true;
+        speed_car_ahead = check_speed;
+        if ((check_car_s > car_s) && (check_car_s - car_s) < 10)
+        {
+            emergency_brake = true;
+        }
+    }
+}
+```
+
+* The following logic is implemented for changing lanes if a vehicle is ahead of the ego vehicle.
+```
+if (car_ahead)
+{
+    if ((lane == 1) && !car_lane_0)
+    {
+        lane--;
+    }
+    else if ((lane == 1) && !car_lane_2)
+    {
+        lane++;
+    }
+    else if ((lane == 2) && !car_lane_1)
+    {
+        lane--;
+    }
+    else if ((lane == 0) && !car_lane_1)
+    {
+        lane++;
+    }
+    else
+    {
+        if (emergency_brake)
+        {
+            /* Possibility of getting jerk but good for safety */
+            std::cout << "Emergency Brake:" << std::endl;
+            ref_vel -= emergency_braking;
+        }
+        else
+        {
+            if (ref_vel != speed_car_ahead)
+            {
+                ref_vel -= accleration_rate;
+            }
+        }
+    }
+}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## Dependencies
 
 * cmake >= 3.5
