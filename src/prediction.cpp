@@ -1,14 +1,16 @@
 #include "prediction.h"
+#include <iostream>
+
 
 void Prediction::prediction_init()
 {
     /*Maximum speed allowed*/
     max_speed_MPH = 49.0;
-    max_speed_MPH_1 = 47.0;    
+    max_speed_MPH_1 = 47.0;
     offset = 0.224;
-    offset_pos_accln = 0.224;
+    offset_pos_accln = 1.0;
     emergency_braking = 15.0;
-    speed_car_ahead = 0.0;    
+    speed_car_ahead = 0.0;
 }
 
 void Prediction::prediction_doit(int prev_size, double end_path_s, std::vector<std::vector<double>>sensor_fusion,
@@ -24,7 +26,6 @@ void Prediction::prediction_doit(int prev_size, double end_path_s, std::vector<s
     bool car_lane_2 = false;
     bool car_ahead = false;
     bool emergency_brake = false;
-
 
     for (int i = 0; i < sensor_fusion.size(); i++)
     {
@@ -43,7 +44,7 @@ void Prediction::prediction_doit(int prev_size, double end_path_s, std::vector<s
             {
                 car_ahead = true;
                 speed_car_ahead = check_speed;
-                if ((check_car_s - car_s) < 5)
+                if ((check_car_s > car_s) && (check_car_s - car_s) < 10)
                 {
                     emergency_brake = true;
                 }
@@ -97,11 +98,12 @@ void Prediction::prediction_doit(int prev_size, double end_path_s, std::vector<s
         }
         else
         {
-            //if (emergency_brake)
+            if (emergency_brake)
             {
-                //ref_vel -= emergency_braking;
+                std::cout << "Emergency Brake:" << std::endl;
+                ref_vel -= emergency_braking;
             }
-            // else
+            else
             {
                 if (ref_vel != speed_car_ahead)
                 {
@@ -121,4 +123,5 @@ void Prediction::prediction_doit(int prev_size, double end_path_s, std::vector<s
             ref_vel += offset;
         }
     }
+   
 }

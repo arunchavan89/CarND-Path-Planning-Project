@@ -15,21 +15,7 @@ void PathPlanner::path_planner(s_car_parameters_t car_params,
     std::vector<double> map_waypoints_s, std::vector<double>map_waypoints_x, std::vector<double>map_waypoints_y,
     std::vector<double> &next_x_vals, std::vector<double> &next_y_vals)
 {
-
-    //Example code:
-#if 0
-    double path_x = 0.0;
-    double path_y = 0.0;
-    double dist_inc = 0.5; // The car moves 50 times in 1 second. move 0.5 meter 50 times = 25 m/s = 50MPH
-    for (int i = 0; i < 50; i++)
-    {
-        path_x = car_x + (dist_inc * i) * cos(deg2rad(car_yaw));
-        path_y = car_y + (dist_inc * i) * sin(deg2rad(car_yaw));
-        next_x_vals.push_back(path_x);
-        next_y_vals.push_back(path_y);
-    }
-#endif
-
+    
     // Size of the previous path
     prev_size = previous_path_x.size();
 
@@ -116,14 +102,13 @@ void PathPlanner::create_spline_trajectory(std::vector<double>previous_path_x, s
     double target_dist = sqrt(target_x * target_x + target_y * target_y);
 
     double x_add_on = 0;
+    double N = target_dist / (time_per_frame * ref_vel_m_per_sec);
 
     for (int i = 1; i < 50 - prev_size; i++)
     {
         /*
         * Formula for calculating number of segments ´N´, N * 0.02* velocity = 30.0
-        */
-
-        double N = target_dist / (time_per_frame * ref_vel_m_per_sec);
+        */       
         double x_point = x_add_on + target_x / N;
         double y_point = s(x_point);
 

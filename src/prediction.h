@@ -15,8 +15,8 @@ public:
     double offset;
     double offset_pos_accln;
     double emergency_braking;
-    double speed_car_ahead;
-
+    double speed_car_ahead;    
+   
 private:
     
 
