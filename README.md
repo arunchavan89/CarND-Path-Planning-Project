@@ -185,21 +185,35 @@ if (car_ahead)
 
 ```
 
+* For lane changing trajectories the current implemetation uses 'spline' library.
+* This library is single header file that helps to get the corresponding 'y' coordinate on the spline if 'x' coordinate is provided.
+* The following diagram helps to understand the trajectory generation procedure.
+<p align="center">
+  <img width="500" height="400" src="attachments/spline.PNG">
+</p>
+
+* The idea is to find 'N' number of points on the spline which are spaced in a way that the vehicle moves with desired speed.
+* The length of the spline can be linearlized to make it easy.
+* A spline trajectory of length 30 meters is to be genearated. This 30 meter path is segmented'N' number of parts with the formula mentioned in the image.
+* In addition to the previous path points the new points on the spline are calculated using the function implemented in spline.h
+* Having previous path points is important to make the spline trajectory smooth.
 
 
+## Result
+* The car is able to drive at least 4.32 miles without incident.
+* The car drives according to the speed limit.
+* Max Acceleration and Jerk are not Exceeded.
+* Car does not have collisions.
+* The car stays in its lane, except for the time between changing lanes.
+* The car is able to change lanes
 
+<p align="center">
+  <img width="500" height="400" src="attachments/final_result.PNG">
+</p>
 
-
-
-
-
-
-
-
-
-
-
-
+## Future work
+* Implementation of th quintic polynomial solver
+* participation in Bosch challenge after completion of the course.
 
 ## Dependencies
 
@@ -221,6 +235,9 @@ if (car_ahead)
     cd uWebSockets
     git checkout e94b6e1
     ```
+## Installation:
 
+### Windows:
+* [step by step guide](https://medium.com/@fzubair/udacity-carnd-term2-visual-studio-2015-17-setup-cca602e0b1cd)
 
-
+* One of the newest features to Windows 10 users is an Ubuntu Bash environment that works great and is easy to setup and use. Here is a nice [step by step guide](https://www.howtogeek.com/249966/how-to-install-and-use-the-linux-bash-shell-on-windows-10/) for setting up utilities.
