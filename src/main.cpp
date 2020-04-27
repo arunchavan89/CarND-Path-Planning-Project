@@ -8,6 +8,7 @@
 #include "helpers.h"
 #include "json.hpp"
 #include "spline.h"
+
 // for convenience
 using nlohmann::json;
 using std::string;
@@ -15,9 +16,17 @@ using std::vector;
 
 int main() {
     uWS::Hub h;
+
+    /* Default start lane number */
     int lane = 1;
+
+    /* The vehicle prior velocity */
     double ref_vel = 0.0;
+
+    /* The vehicle´s maximum velocity allowed in MPH */
     double max_speed_MPH = 49.0;
+
+    /* The vehicle allowed to accelerate faster until this speed limit. */
     double max_speed_MPH_1 = 47.0;
 
     // Load up map values for waypoint's x,y,s and d normalized normal vectors
@@ -92,14 +101,19 @@ int main() {
 
                             json msgJson;
 
+                            /* The path points the vehicle would follow */
                             vector<double> next_x_vals;
                             vector<double> next_y_vals;
 
+                            /* Acceleration rates */
+                            double accleration_rate = 0.224;
+                            double aggresive_accleration_rate = 1.0;
 
-                            double offset = 0.224;
-                            double offset_pos_accln = 1.0;
+                            /* Braking decceleration when emergency */
                             double  emergency_braking = 15.0;
                             double  speed_car_ahead = 0.0;
+
+                            /* Size of the previous path*/
                             int prev_size = previous_path_x.size();
 
                             if (prev_size > 0)
@@ -124,6 +138,7 @@ int main() {
                                 //This will help to predict the where the vehicle will be in future
                                 check_car_s += ((double)prev_size * 0.02 * check_speed);
 
+                                /* Check if any vehicle is ahead of the ego vehicle */
                                 if ((d < (2 + 4 * lane + 2)) && (d > (2 + 4 * lane - 2)))
                                 {
                                     if ((check_car_s > car_s) && (check_car_s - car_s) < 30)
@@ -137,6 +152,7 @@ int main() {
                                     }
                                 }
 
+                                /* Check if any vehicle present in lane 0*/
                                 if ((d > 0) && (d < 4))
                                 {
                                     if (((check_car_s > car_s) && (check_car_s - car_s) < 35) ||
@@ -145,6 +161,8 @@ int main() {
                                         car_lane_0 = true;
                                     }
                                 }
+
+                                /* Check if any vehicle present in lane 1*/
                                 if ((d > 4) && (d < 8))
                                 {
                                     if (((check_car_s > car_s) && (check_car_s - car_s) < 35) ||
@@ -153,6 +171,8 @@ int main() {
                                         car_lane_1 = true;
                                     }
                                 }
+
+                                /* Check if any vehicle present in lane 2*/
                                 if ((d > 8) && (d < 12))
                                 {
                                     if (((check_car_s > car_s) && (check_car_s - car_s) < 35) ||
@@ -164,6 +184,7 @@ int main() {
 
                             }
 
+                            /* If any vehicle is ahead of the ego car, take an appropriate decision. */
                             if (car_ahead)
                             {
                                 if ((lane == 1) && !car_lane_0)
@@ -186,6 +207,7 @@ int main() {
                                 {
                                     if (emergency_brake)
                                     {
+                                        /* Possibility of getting jerk but good for safety */
                                         std::cout << "Emergency Brake:" << std::endl;
                                         ref_vel -= emergency_braking;
                                     }
@@ -193,7 +215,7 @@ int main() {
                                     {
                                         if (ref_vel != speed_car_ahead)
                                         {
-                                            ref_vel -= offset;
+                                            ref_vel -= accleration_rate;
                                         }
                                     }
                                 }
@@ -202,19 +224,19 @@ int main() {
                             {
                                 if (ref_vel < max_speed_MPH_1)
                                 {
-                                    ref_vel += offset_pos_accln;
+                                    ref_vel += aggresive_accleration_rate;
                                 }
                                 if (ref_vel < max_speed_MPH)
                                 {
-                                    ref_vel += offset;
+                                    ref_vel += accleration_rate;
                                 }
                             }
 
-                            double  target_x = 30.0;                            // creating spline till next 30 meters
+                            /* creating spline till next 30 meters */
+                            double  target_x = 30.0;
                             double time_per_frame = 0.02;
                             std::vector<double> pts_x;
                             std::vector<double> pts_y;
-                            // Size of the previous path                         
 
                             double  ref_x = car_x;
                             double ref_y = car_y;
@@ -223,7 +245,6 @@ int main() {
                             // If previous states are almost empty, use the car as a starting point
                             if (prev_size < 2)
                             {
-
                                 //Use two points thats makes path tangent to the car
                                 double prev_car_x = ref_x - cos(car_yaw);
                                 double prev_car_y = ref_y - sin(car_yaw);
@@ -267,7 +288,7 @@ int main() {
                             pts_x.push_back(next_wp2[0]);
                             pts_y.push_back(next_wp2[1]);
 
-                            // Making coordinates to local car coordinates.
+                            /* Making coordinates to local car coordinates */
                             for (int i = 0; i < pts_x.size(); i++)
                             {
                                 double shift_x = pts_x[i] - ref_x;
@@ -277,7 +298,7 @@ int main() {
                                 pts_y[i] = shift_x * sin(0 - ref_yaw) + shift_y * cos(0 - ref_yaw);
                             }
 
-                            // Create the spline.
+                            /* Create the spline. */
                             tk::spline s;
                             s.set_points(pts_x, pts_y);
 
@@ -288,10 +309,9 @@ int main() {
                                 next_y_vals.push_back(previous_path_y[i]);
                             }
 
-                            // Calculate distance y position on 30 m ahead.
+                            /* Calculate distance y position on 30 m ahead. */
                             double target_y = s(target_x);
                             double target_dist = sqrt(target_x * target_x + target_y * target_y);
-
                             double x_add_on = 0;
                             double N = target_dist / (time_per_frame * ref_vel / 2.24);
 
@@ -325,7 +345,8 @@ int main() {
                             ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
                         }  // end "telemetry" if
                     }
-                    else {
+                    else
+                    {
                         // Manual driving
                         std::string msg = "42[\"manual\",{}]";
                         ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
@@ -333,21 +354,25 @@ int main() {
                 }  // end websocket if
         }); // end h.onMessage
 
-    h.onConnection([&h](uWS::WebSocket<uWS::SERVER> ws, uWS::HttpRequest req) {
+    h.onConnection([&h](uWS::WebSocket<uWS::SERVER> ws, uWS::HttpRequest req) 
+        {
         std::cout << "Connected!!!" << std::endl;
         });
 
     h.onDisconnection([&h](uWS::WebSocket<uWS::SERVER> ws, int code,
-        char *message, size_t length) {
+        char *message, size_t length) 
+        {
             ws.close();
             std::cout << "Disconnected" << std::endl;
         });
 
     int port = 4567;
-    if (h.listen("127.0.0.1", port)) {
+    if (h.listen("127.0.0.1", port)) 
+    {
         std::cout << "Listening to port " << port << std::endl;
     }
-    else {
+    else 
+    {
         std::cerr << "Failed to listen to port" << std::endl;
         return -1;
     }
