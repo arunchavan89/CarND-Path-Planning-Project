@@ -110,7 +110,7 @@ int main() {
                             double aggresive_accleration_rate = 1.0;
 
                             /* Braking decceleration when emergency */
-                            double  emergency_braking = 15.0;
+                            double  emergency_braking = 1.5;
                             double  speed_car_ahead = 0.0;
 
                             /* Size of the previous path*/
